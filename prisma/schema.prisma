@@ -4,9 +4,7 @@ generator client {
 }
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
-  connection_limit = 10
-  interactive_transactions = true
+  url      = env("DATABASE_URL") // Make sure this is set in your .env file
 }
 
 model Stock {
