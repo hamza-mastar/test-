@@ -1,4 +1,5 @@
 
+
 require('dotenv').config();
 const puppeteer = require('puppeteer');
 const { PrismaClient } = require('@prisma/client');
@@ -92,18 +93,14 @@ async function performScraping() {
     const username = process.env.USER_NAME || "al_0210@yahoo.com";
     const password = process.env.PASS_WORD || "Lucky720@";
     const browser = await puppeteer.launch({
-        executablePath: '/usr/bin/chromium-browser',
         headless: true,
         args: [
-            "--disable-setuid-sandbox",
-            "--no-sandbox",
-            "--single-process",
-            "--no-zygote",
+            '--disable-dev-shm-usage',
+            '--no-sandbox',
+            '--disable-gpu',
+            '--disable-software-rasterizer',
+            '--window-size=1920,1080',
         ],
-        // executablePath:
-        //     process.env.NODE_ENV === "production"
-        //         ? process.env.PUPPETEER_EXECUTABLE_PATH
-        //         : puppeteer.executablePath(),
     });
     const page = await browser.newPage();
     await page.setUserAgent(faker.internet.userAgent());
