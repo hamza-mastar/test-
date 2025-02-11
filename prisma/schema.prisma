@@ -1,0 +1,21 @@
+generator client {
+  provider = "prisma-client-js"
+  path   = "../node_modules/.prisma/client"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL") // Make sure this is set in your .env file
+}
+
+model Stock {
+  id               String   @id @default(uuid())
+  symbol           String
+  price            Float
+  change           Float
+  realChange       Float?
+  percentageChange Float?
+  status           String?
+  step             Int      @default(1)
+  timestamp        DateTime @default(now())
+  createdAt        DateTime @default(now())
+}
