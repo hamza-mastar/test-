@@ -21,4 +21,6 @@ ENV XDG_CACHE_HOME=/tmp/.chromium
 # Install browsers ( post-install scripts)
 RUN npx puppeteer browsers install
 
+RUN npx prisma generate
+
 CMD ["node", "index.js"]
