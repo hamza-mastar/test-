@@ -23,4 +23,4 @@ RUN npx puppeteer browsers install
 
 RUN npx prisma generate
 
-CMD ["node", "index.js"]
+CMD ["node", "scheduler.js"]
