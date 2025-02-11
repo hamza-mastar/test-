@@ -1,34 +1,24 @@
-FROM ghcr.io/puppeteer/puppeteer:23.4.1
+FROM ghcr.io/puppeteer/puppeteer:latest 
 
-# Switch to root so we can install dependencies without permission issues
-USER root
+# Using Root to enable SYS_ADMIN capabilities (for running the browser in sandbox mode )
+USER root 
 
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable \
-    NODE_ENV=production
+# Install Puppeteer under /node_modules so it's available system-wide
+COPY package.json /app/
+COPY . /app/
 
-# Set working directory (using a directory we control)
-WORKDIR /app
+RUN cd /app/ && npm install
 
-# Copy package files
-COPY package*.json ./
+WORKDIR /app  
 
-# Install dependencies as root (using --unsafe-perm and --allow-root)
-RUN npm ci --unsafe-perm=true --allow-root
+EXPOSE 4000
 
-# Copy the rest of the application code
-COPY . .
+# set env variable ( due to issue talked about here https://github.com/puppeteer/puppeteer/issues/11023#issuecomment-1776247197)
 
-# Fix permissions: give the non-root user (pptruser) ownership of the /app folder
-RUN chown -R pptruser:pptruser /app
+ENV XDG_CONFIG_HOME=/tmp/.chromium
+ENV XDG_CACHE_HOME=/tmp/.chromium
 
-# Generate Prisma client using local installation only (do not auto-install a missing version)
-# RUN npx prisma generate
-# Switch back to the non-root user (the default for this image)
-USER pptruser
+# Install browsers ( post-install scripts)
+RUN npx puppeteer browsers install
 
-# (Optional) Expose the port your app listens on (change 3000 as needed)
-EXPOSE 3000
-
-# Start the application
 CMD ["node", "index.js"]
