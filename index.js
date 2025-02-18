@@ -46,7 +46,7 @@ async function scrapeWatchlist(page) {
             return data;
         });
 
-        console.log('✅ Data scraping complete.');
+        console.log('✅ Data scraping complete.', stocks);
         return stocks;
     } catch (e) {
         console.log('❌ Error encountered while scraping:', e);
@@ -68,17 +68,25 @@ async function saveToDatabase(stockData) {
 
             const percentageChange = price ? (change / price) * 100 : 0.0;
 
+            // Get the most recent record for the symbol
             const previousRecord = await prisma.stock.findFirst({
                 where: { symbol: symbol },
                 orderBy: { timestamp: 'desc' },
             });
 
-            let realChange = previousRecord ? parseFloat((price - previousRecord.price).toFixed(2)) : change;
+            // Calculate realChange: If no previous record, set realChange as the current change
+            let realChange = previousRecord
+                ? parseFloat((price - previousRecord.price).toFixed(2)) // Ensure rounded to 2 decimal places
+                : change;
             let status = realChange >= 0 ? 'Gainer' : 'Loser';
 
+            // Save the new stock record
             await prisma.stock.create({
                 data: { symbol, price, change, realChange, percentageChange, timestamp, status, step: 1 },
+
             });
+            // console.log(`Price: ${price}, Previous Price: ${previousRecord.price}, Real Change: ${realChange}`);
+
         }
 
         console.log('✅ Data saved to database.');
@@ -106,6 +114,7 @@ async function performScraping() {
     try {
         if (username && password && (await login(page, username, password))) {
             const stockData = await scrapeWatchlist(page);
+
             await saveToDatabase(stockData);
         } else {
             console.log('❌ Login failed or missing credentials.');
