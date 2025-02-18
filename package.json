@@ -11,12 +11,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-        "@faker-js/faker": "^9.4.0",
-        "@prisma/client": "^6.3.1",
-        "dotenv": "^16.0.3",
-        "moment-timezone": "^0.5.47",
-        "node-cron": "^3.0.3",
-        "puppeteer": "^23.4.1"
-      }
-  
+    "@faker-js/faker": "^9.4.0",
+    "@prisma/client": "^6.3.1",
+    "cron": "^3.5.0",
+    "dotenv": "^16.0.3",
+    "express": "^4.21.2",
+    "moment-timezone": "^0.5.47",
+    "node-cron": "^3.0.3",
+    "puppeteer": "^23.4.1"
+  }
 }
