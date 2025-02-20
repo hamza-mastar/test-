@@ -34,12 +34,14 @@ async function scrapeWatchlist(page) {
             const data = [];
             rows.forEach((row) => {
                 const columns = row.querySelectorAll('td');
-                if (columns.length >= 5) {
+                if (columns.length >= 6) {
                     const symbol = columns[0].innerText.trim();
                     const price = parseFloat(columns[3].innerText.replace(/,/g, '').trim());
                     const change = parseFloat(columns[4].innerText.replace(/,/g, '').trim());
-                    if (!isNaN(price) && !isNaN(change)) {
-                        data.push({ symbol, price, change, timestamp: new Date() });
+                    const marketCap = parseFloat(columns[5].innerText.replace(/,/g, '').trim());
+
+                    if (!isNaN(price) && !isNaN(change) && !isNaN(marketCap)) {
+                        data.push({ symbol, price, change, marketCap, timestamp: new Date() });
                     }
                 }
             });
@@ -53,40 +55,65 @@ async function scrapeWatchlist(page) {
         return [];
     }
 }
-
 async function saveToDatabase(stockData) {
     if (!stockData || stockData.length === 0) {
         console.log('No data scraped; nothing to save.');
         return;
     }
+
     try {
         await prisma.stock.updateMany({ data: { step: { increment: 1 } } });
 
-        for (const data of stockData) {
-            const { symbol, price, change } = data;
+        stockData.sort((a, b) => b.marketCap - a.marketCap);
+
+        for (let i = 0; i < stockData.length; i++) {
+            const { symbol, price, change, marketCap } = stockData[i];
             const timestamp = new Date();
-
             const percentageChange = price ? (change / price) * 100 : 0.0;
+            const newRank = i + 1; // ✅ Define cRank as newRank
 
-            // Get the most recent record for the symbol
             const previousRecord = await prisma.stock.findFirst({
                 where: { symbol: symbol },
                 orderBy: { timestamp: 'desc' },
             });
 
-            // Calculate realChange: If no previous record, set realChange as the current change
-            let realChange = previousRecord
-                ? parseFloat((price - previousRecord.price).toFixed(2)) // Ensure rounded to 2 decimal places
-                : change;
+            let realChange = previousRecord ? parseFloat((price - previousRecord.price).toFixed(2)) : change;
             let status = realChange >= 0 ? 'Gainer' : 'Loser';
 
-            // Save the new stock record
+            let previousRank = previousRecord ? previousRecord.cRank : newRank;
+            let cMove = "Same";
+            let pMove = previousRecord ? previousRecord.cMove : "Same";
+            let nMove = previousRecord ? previousRecord.nMove : 0;
+
+            if (previousRank > newRank) {
+                cMove = "Up";
+            } else if (previousRank < newRank) {
+                cMove = "Down";
+            }
+
+            if (cMove !== "Same") {
+                nMove += 1;
+            }
+
+            // ✅ Fix the error by explicitly setting cRank
             await prisma.stock.create({
-                data: { symbol, price, change, realChange, percentageChange, timestamp, status, step: 1 },
-
+                data: {
+                    symbol,
+                    price,
+                    change,
+                    realChange: realChange ?? 0.0,
+                    percentageChange: percentageChange ?? 0.0,
+                    marketCap,
+                    cRank: newRank, // ✅ Fix here
+                    pRank: previousRank,
+                    cMove,
+                    pMove,
+                    nMove,
+                    timestamp,
+                    status: status ?? "Neutral",
+                    step: 1
+                },
             });
-            // console.log(`Price: ${price}, Previous Price: ${previousRecord.price}, Real Change: ${realChange}`);
-
         }
 
         console.log('✅ Data saved to database.');
@@ -114,7 +141,6 @@ async function performScraping() {
     try {
         if (username && password && (await login(page, username, password))) {
             const stockData = await scrapeWatchlist(page);
-
             await saveToDatabase(stockData);
         } else {
             console.log('❌ Login failed or missing credentials.');
