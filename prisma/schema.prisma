@@ -1,10 +1,11 @@
 generator client {
   provider = "prisma-client-js"
-  path   = "../node_modules/.prisma/client"
+  path     = "../node_modules/.prisma/client"
 }
+
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL") // Make sure this is set in your .env file
+  url      = env("DATABASE_URL") // Ensure this is set in your .env file
 }
 
 model Stock {
@@ -12,9 +13,15 @@ model Stock {
   symbol           String
   price            Float
   change           Float
-  realChange       Float?
-  percentageChange Float?
-  status           String?
+  realChange       Float?   @default(0.0)
+  percentageChange Float?   @default(0.0)
+  marketCap        Float
+  cRank            Int
+  pRank            Int
+  cMove            String
+  pMove            String
+  nMove            Int
+  status           String?  @default("Neutral")
   step             Int      @default(1)
   timestamp        DateTime @default(now())
   createdAt        DateTime @default(now())
